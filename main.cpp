@@ -5,8 +5,8 @@
 #include <string>
 #include <vector>
 
-#define NUMBER_OF_RAYS 540
-#define FOV 60
+#define NUMBER_OF_RAYS 1080
+#define FOV 40
 #define WIDTHMAP 17
 #define HEIGHTMAP 17
 #define SCALE 10
@@ -31,8 +31,28 @@ typedef struct myRectangle
 	Color col;
 	bool isWall;
 
-
 } myRec;
+
+static inline void fillSeg(myRec (*map)[HEIGHTMAP], std::vector<segment> &seg)
+{
+
+	for (int i = 0; i < HEIGHTMAP; i++)
+	{
+		for (int j = 0; j < WIDTHMAP; j++)
+		{
+			if (i != 0 && j != 0 && i != HEIGHTMAP - 1 && j != WIDTHMAP - 1)
+			{
+				if (map[i][j].isWall)
+				{
+					seg.push_back({map[i][j].rec.x, map[i][j].rec.y, map[i][j].rec.x + map[i][j].rec.width, map[i][j].rec.y});
+					seg.push_back({map[i][j].rec.x, map[i][j].rec.y + map[i][j].rec.height, map[i][j].rec.x + map[i][j].rec.width, map[i][j].rec.y});
+					seg.push_back({map[i][j].rec.x + map[i][j].rec.width, map[i][j].rec.y, map[i][j].rec.x + map[i][j].rec.width, map[i][j].rec.y + map[i][j].rec.height});
+					seg.push_back({map[i][j].rec.x, map[i][j].rec.y, map[i][j].rec.x, map[i][j].rec.y + map[i][j].rec.height});
+				}
+			}
+		}
+	}
+}
 
 static inline float scale(float A, float A1, float A2, float Min, float Max)
 {
@@ -79,7 +99,7 @@ static inline bool lineLine(ray &r, segment &s, Vector2 &intersecPoint)
 
 int main()
 {
-	int w = 1920;
+	int w = 1480;
 	int h = 720;
 	std::string name;
 
@@ -90,6 +110,8 @@ int main()
 
 
 	Vector2 tmp;
+
+	int tmpAlpha;
 
 	ray player;
 
@@ -111,7 +133,7 @@ int main()
 	{
 		for (int j = 0; j < WIDTHMAP; j++)
 		{
-			if (i == 0 || j == 0 || i == HEIGHTMAP - 1 ||j == WIDTHMAP - 1)
+			if (i == 0 || j == 0 || i == HEIGHTMAP - 1 || j == WIDTHMAP - 1)
 			{
 				map[i][j].col = RED;
 				map[i][j].isWall = true;
@@ -132,14 +154,17 @@ int main()
 		}
 	}
 
+	map[3][7].isWall = true;
+	map[3][7].col = RED;
+
 	seg.push_back({{SCALE, SCALE}, {SCALE * WIDTHMAP - SCALE, SCALE}});													// NORTH
 	seg.push_back({{SCALE, SCALE * HEIGHTMAP - SCALE}, {SCALE * WIDTHMAP - SCALE, SCALE * HEIGHTMAP - SCALE}});			// SOUTH
 	seg.push_back({{SCALE * WIDTHMAP - SCALE, SCALE}, {SCALE * WIDTHMAP - SCALE, SCALE * HEIGHTMAP - SCALE}});			// EAST
 	seg.push_back({{SCALE, SCALE}, {SCALE, SCALE * HEIGHTMAP - SCALE}});												// WEST
 
 	player.pos = {(HEIGHTMAP * SCALE) / 2, (WIDTHMAP * SCALE) / 2};
-	player.dir.x = player.pos.x + std::cos(PI * 2) * ((WIDTHMAP * SCALE) * 2);
-	player.dir.y = player.pos.y + std::sin(PI * 2) * ((HEIGHTMAP * SCALE) * 2);
+	player.dir.x = player.pos.x + std::cos(PI * 2) * ((WIDTHMAP * SCALE));
+	player.dir.y = player.pos.y + std::sin(PI * 2) * ((HEIGHTMAP * SCALE));
 
 	for (unsigned int i = 0; i < NUMBER_OF_RAYS; i++)
 		r[i].pos = player.pos;
@@ -153,15 +178,15 @@ int main()
 		if (IsKeyDown(KEY_LEFT))
 		{
 			
-			tmp.x =			  ((player.dir.x - player.pos.x) * std::cos(angleBetweenRays + 0.03f)) + ((player.dir.y - player.pos.y) * std::sin(angleBetweenRays) + player.pos.x);
-			player.dir.y = ((-(player.dir.x - player.pos.x)) * std::sin(angleBetweenRays + 0.03f)) + ((player.dir.y - player.pos.y) * std::cos(angleBetweenRays) + player.pos.y);
+			tmp.x =			  ((player.dir.x - player.pos.x) * std::cos(angleBetweenRays + 0.03f)) + ((player.dir.y - player.pos.y) * std::sin(angleBetweenRays + 0.03f) + player.pos.x);
+			player.dir.y = ((-(player.dir.x - player.pos.x)) * std::sin(angleBetweenRays + 0.03f)) + ((player.dir.y - player.pos.y) * std::cos(angleBetweenRays + 0.03f) + player.pos.y);
 			player.dir.x = tmp.x;
 		}
 		if (IsKeyDown(KEY_RIGHT))
 		{
 			
-			tmp.x =			  ((player.dir.x - player.pos.x) * std::cos(-angleBetweenRays - 0.03f)) + ((player.dir.y - player.pos.y) * std::sin(-angleBetweenRays) + player.pos.x);
-			player.dir.y = ((-(player.dir.x - player.pos.x)) * std::sin(-angleBetweenRays - 0.03f)) + ((player.dir.y - player.pos.y) * std::cos(-angleBetweenRays) + player.pos.y);
+			tmp.x =			  ((player.dir.x - player.pos.x) * std::cos(-angleBetweenRays - 0.03f)) + ((player.dir.y - player.pos.y) * std::sin(-angleBetweenRays - 0.03f) + player.pos.x);
+			player.dir.y = ((-(player.dir.x - player.pos.x)) * std::sin(-angleBetweenRays - 0.03f)) + ((player.dir.y - player.pos.y) * std::cos(-angleBetweenRays - 0.03f) + player.pos.y);
 			player.dir.x = tmp.x;
 		}
 		if (IsKeyDown(KEY_UP))
@@ -180,6 +205,8 @@ int main()
 			player.dir.x += 		((tmp.x - player.dir.x) * SCALE) / 10000;
 			player.dir.y += 		((tmp.y - player.dir.y) * SCALE) / 10000;
 		}
+
+		fillSeg(map, seg);
 
 		// Xr =  (X-Xc)*cos(ang) + (Y-Yc)*sin(ang) + Xc;
 		// Yr = -(X-Xc)*sin(ang) + (Y-Yc)*cos(ang) + Yc;
@@ -227,7 +254,9 @@ int main()
 			for (int i = 0; i < NUMBER_OF_RAYS; i++)
 			{
 				temp = scale(dist[i], WIDTHMAP * SCALE, 0, 1, h);
-				DrawRectangle(200 + (i * lineWidth), (h / 2) - (temp / 2), lineWidth, temp, GOLD);
+				tmpAlpha = scale(dist[i], WIDTHMAP * SCALE, 0, 1, 255);
+				DrawRectangle(200 + (i * lineWidth), (h / 2) - (temp / 2), lineWidth, temp, {255, 203, 0, tmpAlpha});
+				DrawRectangle(200 + (i * lineWidth), (h / 2) - (temp / 2) + temp, lineWidth, h - ((h / 2) - (temp / 2) + temp), {130, 130, 130, tmpAlpha});	// floor color
 
 			}
 
@@ -239,6 +268,3 @@ int main()
 		EndDrawing();
 	}
 }
-
-// si dist == 0 				alors height == h
-// si dist == widthmap*scale	alors h == 1

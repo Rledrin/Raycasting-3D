@@ -5,8 +5,8 @@
 #include <string>
 #include <vector>
 
-#define NUMBER_OF_RAYS 1080
-#define FOV 40
+#define NUMBER_OF_RAYS 540
+#define FOV 60
 #define WIDTHMAP 17
 #define HEIGHTMAP 17
 #define SCALE 10
@@ -45,7 +45,7 @@ static inline void fillSeg(myRec (*map)[HEIGHTMAP], std::vector<segment> &seg)
 				if (map[i][j].isWall)
 				{
 					seg.push_back({map[i][j].rec.x, map[i][j].rec.y, map[i][j].rec.x + map[i][j].rec.width, map[i][j].rec.y});
-					seg.push_back({map[i][j].rec.x, map[i][j].rec.y + map[i][j].rec.height, map[i][j].rec.x + map[i][j].rec.width, map[i][j].rec.y});
+					seg.push_back({map[i][j].rec.x, map[i][j].rec.y + map[i][j].rec.height, map[i][j].rec.x + map[i][j].rec.width, map[i][j].rec.y + map[i][j].rec.height});
 					seg.push_back({map[i][j].rec.x + map[i][j].rec.width, map[i][j].rec.y, map[i][j].rec.x + map[i][j].rec.width, map[i][j].rec.y + map[i][j].rec.height});
 					seg.push_back({map[i][j].rec.x, map[i][j].rec.y, map[i][j].rec.x, map[i][j].rec.y + map[i][j].rec.height});
 				}
@@ -78,7 +78,6 @@ static inline bool lineLine(ray &r, segment &s, Vector2 &intersecPoint)
 	// if uA and uB are between 0-1, lines are colliding
 	if (uA >= 0 && uA <= 1 && uB >= 0 && uB <= 1)
 	{
-		// optionally, draw a circle where the lines meet
 		intersecPoint.x = x1 + (uA * (x2-x1));
 		intersecPoint.y = y1 + (uA * (y2-y1));
 		return true;
@@ -86,20 +85,9 @@ static inline bool lineLine(ray &r, segment &s, Vector2 &intersecPoint)
 	return false;
 }
 
-// static inline Vector2 closestVec(Vector2 ori, Vector2 v2, Vector2 intersec)
-// {
-// 	int cmp1 = 0;
-// 	int cmp2 = 0;
-
-// 	cmp1 = std::abs(ori.x - v2.x) + std::abs(ori.y - v2.y);
-// 	cmp2 = std::abs(ori.x - intersec.x) + std::abs(ori.y - intersec.y);
-
-// 	return ((cmp1 >= cmp2) ? intersec : v2);
-// }
-
 int main()
 {
-	int w = 1480;
+	int w = 1080;
 	int h = 720;
 	std::string name;
 
@@ -115,7 +103,7 @@ int main()
 
 	ray player;
 
-	int lineWidth = w / NUMBER_OF_RAYS;
+	int lineWidth = (w - 100) / NUMBER_OF_RAYS;
 	if (lineWidth < 1) lineWidth = 1;
 
 	std::vector<segment> seg;
@@ -124,6 +112,8 @@ int main()
 	dist.resize(NUMBER_OF_RAYS);
 
 	float temp;
+
+	size_t size;
 
 	ray r[NUMBER_OF_RAYS];
 
@@ -169,6 +159,9 @@ int main()
 	for (unsigned int i = 0; i < NUMBER_OF_RAYS; i++)
 		r[i].pos = player.pos;
 
+	fillSeg(map, seg);
+
+
 	InitWindow(w, h, "Raycasting 3D");
 
 	SetTargetFPS(60);
@@ -192,28 +185,26 @@ int main()
 		if (IsKeyDown(KEY_UP))
 		{
 			tmp = player.pos;
-			player.pos.x -= ((player.pos.x - player.dir.x) * SCALE) /  10000;
-			player.pos.y -= ((player.pos.y - player.dir.y) * SCALE) /  10000;
-			player.dir.x -= 		((tmp.x - player.dir.x) * SCALE) / 10000;
-			player.dir.y -= 		((tmp.y - player.dir.y) * SCALE) / 10000;
+			player.pos.x -= ((player.pos.x - player.dir.x) * SCALE) /  5000;
+			player.pos.y -= ((player.pos.y - player.dir.y) * SCALE) /  5000;
+			player.dir.x -= 		((tmp.x - player.dir.x) * SCALE) / 5000;
+			player.dir.y -= 		((tmp.y - player.dir.y) * SCALE) / 5000;
 		}
 		if (IsKeyDown(KEY_DOWN))
 		{
 			tmp = player.pos;
-			player.pos.x += ((player.pos.x - player.dir.x) * SCALE) /  10000;
-			player.pos.y += ((player.pos.y - player.dir.y) * SCALE) /  10000;
-			player.dir.x += 		((tmp.x - player.dir.x) * SCALE) / 10000;
-			player.dir.y += 		((tmp.y - player.dir.y) * SCALE) / 10000;
+			player.pos.x += ((player.pos.x - player.dir.x) * SCALE) / 5000;
+			player.pos.y += ((player.pos.y - player.dir.y) * SCALE) / 5000;
+			player.dir.x += 		((tmp.x - player.dir.x) * SCALE) /5000;
+			player.dir.y += 		((tmp.y - player.dir.y) * SCALE) /5000;
 		}
-
-		fillSeg(map, seg);
 
 		// Xr =  (X-Xc)*cos(ang) + (Y-Yc)*sin(ang) + Xc;
 		// Yr = -(X-Xc)*sin(ang) + (Y-Yc)*cos(ang) + Yc;
 
 		r[0].pos = player.pos;
 
-		r[0].dir.x = ((player.dir.x - player.pos.x) * std::cos(fovInRadian / 2)) + ((player.dir.y - player.pos.y) * std::sin(fovInRadian / 2) + player.pos.x);
+		r[0].dir.x =    ((player.dir.x - player.pos.x) * std::cos(fovInRadian / 2)) + ((player.dir.y - player.pos.y) * std::sin(fovInRadian / 2) + player.pos.x);
 		r[0].dir.y = ((-(player.dir.x - player.pos.x)) * std::sin(fovInRadian / 2)) + ((player.dir.y - player.pos.y) * std::cos(fovInRadian / 2) + player.pos.y);
 
 		for (unsigned int i = 1; i < NUMBER_OF_RAYS; i++)
@@ -222,17 +213,32 @@ int main()
 			r[i].dir.x =    ((r[i - 1].dir.x - player.pos.x) * std::cos(-angleBetweenRays)) + ((r[i - 1].dir.y - player.pos.y) * std::sin(-angleBetweenRays) + player.pos.x);
 			r[i].dir.y = ((-(r[i - 1].dir.x - player.pos.x)) * std::sin(-angleBetweenRays)) + ((r[i - 1].dir.y - player.pos.y) * std::cos(-angleBetweenRays) + player.pos.y);
 		}
+		size = seg.size();
 
 		for (unsigned int i = 0; i < NUMBER_OF_RAYS; i++)
 		{
-			for (unsigned int j = 0; j < seg.size(); j++)
+			for (unsigned int j = 0; j < size; j++)
 			{
 				if (lineLine(r[i], seg[j], intersecPoint))
 				{
-					r[i].dir = intersecPoint;
-					dist[i] = sqrtf((float)(((r[i].pos.x - r[i].dir.x) * (r[i].pos.x - r[i].dir.x)) + ((r[i].pos.y - r[i].dir.y) * (r[i].pos.y - r[i].dir.y))));			//distance between two points
+					// r[i].dir = closestVec(r[i].pos, r[i].dir, intersecPoint);
+					if (inter)
+					{
+						if ((temp = sqrtf((float)(((r[i].pos.x - intersecPoint.x) * (r[i].pos.x - intersecPoint.x)) + ((r[i].pos.y - intersecPoint.y) * (r[i].pos.y - intersecPoint.y))))) < dist[i])
+						{
+							dist[i] = temp;
+							r[i].dir = intersecPoint;
+						}
+					}
+					else
+					{
+						r[i].dir = intersecPoint;
+						dist[i] = sqrtf((float)(((r[i].pos.x - r[i].dir.x) * (r[i].pos.x - r[i].dir.x)) + ((r[i].pos.y - r[i].dir.y) * (r[i].pos.y - r[i].dir.y))));
+						inter = true;
+					}
 				}
 			}
+			inter = false;
 		}
 		name = "Raycasting 3D    FPS: " + std::to_string(GetFPS());
 		SetWindowTitle(name.c_str());
@@ -253,7 +259,7 @@ int main()
 
 			for (int i = 0; i < NUMBER_OF_RAYS; i++)
 			{
-				temp = scale(dist[i], WIDTHMAP * SCALE, 0, 1, h);
+				temp = scale(dist[i] * std::cos(fovInRadian), WIDTHMAP * SCALE, 0, 1, h);
 				tmpAlpha = scale(dist[i], WIDTHMAP * SCALE, 0, 1, 255);
 				DrawRectangle(200 + (i * lineWidth), (h / 2) - (temp / 2), lineWidth, temp, {255, 203, 0, tmpAlpha});
 				DrawRectangle(200 + (i * lineWidth), (h / 2) - (temp / 2) + temp, lineWidth, h - ((h / 2) - (temp / 2) + temp), {130, 130, 130, tmpAlpha});	// floor color
